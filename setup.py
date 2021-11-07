@@ -1,11 +1,17 @@
-import os
+from os import path
 
 from setuptools import setup, find_packages
 
+here = path.abspath(path.dirname(__file__))
+
+with open(path.join(here, 'README.md')) as f:
+    long_description = f.read()
+
 setup(
     name='yeelight-atmosphere',
-    version='0.2',
+    version='0.3',
     description='Change your yeelight lamp color to scene atmosphere.',
+    long_description=long_description,
     author='Nikita Savilov',
     author_email="niksavilov@gmail.com",
     url="https://github.com/NikSavilov/yeelight-atmosphere/",
