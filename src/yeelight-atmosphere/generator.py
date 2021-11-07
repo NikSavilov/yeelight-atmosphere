@@ -1,4 +1,5 @@
 import ctypes
+import logging
 from time import sleep
 from typing import List
 
@@ -141,8 +142,12 @@ class ColorGenerator:
         """
         colors = []
         for screen in screens:
-            color_thief = ColorThiefCustom(screen)
-            col = color_thief.get_palette(color_count=palette_size)
+            try:
+                color_thief = ColorThiefCustom(screen)
+                col = color_thief.get_palette(color_count=palette_size)
+            except Exception as err:
+                logging.info(f"Pallet extraction failed: {err}.")
+                col = [(50, 50, 150)]
             colors.extend([Color(*c) for c in col])
 
         avg_color = self.extract_avg_color(colors)
