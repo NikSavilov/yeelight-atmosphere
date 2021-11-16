@@ -2,9 +2,12 @@
 Module of manager for managing multiple bulbs.
 """
 import logging
+import platform
+import subprocess
 import time
 from typing import List
 
+import ifaddr
 from sqlalchemy import func
 from yeelight import discover_bulbs, BulbException
 
@@ -89,7 +92,7 @@ class BulbManager:
 
         return current_ip
 
-    def get_bulb_by_ip(self, ip) -> dict:
+    def get_bulb_by_ip(self, ip) -> Bulb:
         """
         :param ip:
         :return: dict from discover_bulbs() representing a bulb
@@ -100,7 +103,13 @@ class BulbManager:
             if bulb.get('ip') == ip:
                 res = bulb
                 break
-        return res
+
+        new_bulb = None
+        if res:
+            new_bulb = self.new_bulb_from_dict(res)
+            self.send_to_db(new_bulb)
+
+        return new_bulb
 
     @staticmethod
     def get_last_bulb() -> Bulb:
@@ -120,19 +129,40 @@ class BulbManager:
         :return: result of discover_bulbs(), list of dicts: {'ip': '192.168.1.4', 'port': 55443, 'capabilities': {...}}
         """
         if (not self.cached_bulbs) or reset:
-            logging.info(f"Start discover bulbs with {self.timeout}s timeout.")
-            self.cached_bulbs = discover_bulbs(self.timeout)
+            tmp_res = []
+            srt_adapters = sorted(ifaddr.get_adapters(),
+                                  key=lambda a: tuple(sorted([ip.ip for ip in a.ips if isinstance(ip.ip, str)])),
+                                  reverse=True) # Sorting of adapters by IP, to visit local 192.* first
+            for adapter in srt_adapters:
+                logging.info(f"Start discover bulbs with {self.timeout}s timeout at interface {adapter.nice_name}.")
+                try:
+                    tmp_res = discover_bulbs(self.timeout, adapter.name)
+                except OSError:
+                    tmp_res = []
+                if tmp_res:
+                    break
+            self.cached_bulbs = tmp_res
             logging.info(f"Found {len(self.cached_bulbs)} bulbs.")
         return self.cached_bulbs
 
     def is_bulb_alive(self, ip) -> bool:
         """
         :param ip: ip address of bulb
-        :return: True if a bulb is in active bulbs list else False
+        :return: True if a bulb is pinging
         """
-        alive_bulbs = self.get_alive_bulbs()
-        alive_ip = set(i.get("ip", None) for i in alive_bulbs)
-        return True if ip in alive_ip else False
+        res = self._ping_bulb(ip)
+        return res
+
+    @staticmethod
+    def _ping_bulb(host) -> bool:
+        param = '-n' if platform.system().lower() == 'windows' else '-c'
+        command = ['ping', param, '1', host]
+        with subprocess.Popen(command,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              shell=True) as p:
+            output, errors = p.communicate()
+        return not errors
 
     def choose_alive(self) -> (Bulb, None):
         """
