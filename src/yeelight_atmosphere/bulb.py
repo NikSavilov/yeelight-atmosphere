@@ -2,8 +2,10 @@
 Module for bulbs of different type.
 """
 import logging
+import os
 import time
 from collections import deque
+from pathlib import Path
 
 import yeelight
 from PIL import Image, ImageDraw
@@ -18,7 +20,10 @@ from .exception import BulbConnectionLostException
 from .generator import ColorGenerator
 
 # Declaring of local sqlite to storage list of used bulbs.
-engine = create_engine('sqlite:///local.db')
+
+home = str(Path.home())
+db_path = os.path.join(home, 'local.db')
+engine = create_engine('sqlite:///' + db_path)
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 session = Session()
