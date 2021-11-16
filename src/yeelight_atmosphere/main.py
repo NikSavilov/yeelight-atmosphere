@@ -30,7 +30,7 @@ def main():
 
     args = parser.parse_args()
 
-    use_last_bulb = not args.choose
+    use_last_bulb = not (args.choose or args.bulb_ip_address)  # don't use last bulb if IP or forced choice flagged
     strategy = args.strategy
     bulb_ip_address = args.bulb_ip_address
     timeout = args.timeout
