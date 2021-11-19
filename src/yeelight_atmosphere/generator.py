@@ -1,3 +1,6 @@
+"""
+Color generator module.
+"""
 import ctypes
 import logging
 import time
@@ -18,10 +21,12 @@ class ColorGenerator:
 
     def __init__(self, strategy: int = Settings.ALL_SCREEN_STRATEGY):
         """
-
         :param strategy: Defines what parts of screen would be parsed.
         """
         self.strategy = strategy
+        self.screen_ttl = Settings.SCREENSHOT_TTL
+        self.current_ttl = 0
+        self.cached_screen_parts = []
 
     def generator(self, delay=0.1):
         """
@@ -47,10 +52,16 @@ class ColorGenerator:
         """
         :return: List of parts (Image objects) of screen due to parsing strategy.
         """
-        boxes = self._get_boxes()
-        screen_parts = []
-        for box in boxes:
-            screen_parts.append(self.make_screenshot(box))
+        if self.current_ttl <= 0 or not self.cached_screen_parts:
+            boxes = self._get_boxes()
+            screen_parts = []
+            for box in boxes:
+                screen_parts.append(self.make_screenshot(box))
+            self.cached_screen_parts = screen_parts
+            self.current_ttl = self.screen_ttl
+        else:
+            screen_parts = self.cached_screen_parts
+            self.current_ttl -= 1
         return screen_parts
 
     def _get_boxes(self):
@@ -78,8 +89,8 @@ class ColorGenerator:
         """
         user32 = ctypes.windll.user32
         user32.SetProcessDPIAware()
-        x, y = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
-        return 0, 0, x, y
+        x_met, y_met = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+        return 0, 0, x_met, y_met
 
     @staticmethod
     def cut_borders(bbox, percentage=10):
@@ -90,19 +101,22 @@ class ColorGenerator:
         :return: centered rectangle with cut edges
         """
         if 0 < percentage < 100:
-            x0, y0, x1, y1 = bbox
-            width = abs(x1 - x0)
-            height = abs(y1 - y0)
+            x0_bbox, y0_bbox, x1_bbox, y1_bbox = bbox
+            width = abs(x1_bbox - x0_bbox)
+            height = abs(y1_bbox - y0_bbox)
 
             width_shift = int(width * percentage / 100 / 2)
             height_shift = int(height * percentage / 100 / 2)
 
-            x0, y0, x1, y1 = (x0 + width_shift, y0 + height_shift, x1 - width_shift, y1 - height_shift)
-            if x0 < x1 and y0 < y1:
-                bbox = (x0, y0, x1, y1)
+            x0_bbox, y0_bbox, = x0_bbox + width_shift, y0_bbox + height_shift
+            x1_bbox, y1_bbox = x1_bbox - width_shift, y1_bbox - height_shift
+
+            if x0_bbox < x1_bbox and y0_bbox < y1_bbox:
+                bbox = (x0_bbox, y0_bbox, x1_bbox, y1_bbox)
         return bbox
 
-    def extract_borders_boxes(self, bbox, percentage=30, vertical_shift_percentage=0) -> List[tuple]:
+    def extract_borders_boxes(self, bbox, percentage=30,
+                              vertical_shift_percentage=0) -> List[tuple]:
         """
         Extract two rectangles: p1 area and p2 area.
         ----------------
@@ -112,17 +126,18 @@ class ColorGenerator:
         ----------------
         | p2 | p2 | p2 |
         ----------------
-        :param vertical_shift_percentage: vertical shift of p1, p2 to center to avoid player buttons in screenshots
+        :param vertical_shift_percentage: vertical shift of p1, p2 to center
+        to avoid player buttons in screenshots
         :param bbox: tuple of (x0, y0, x1, y1), first point (x0 y0) higher and left.
         :param percentage: percentage of length to cut
         :return:
         """
         if 0 < percentage < 100:
-            x0, y0, x1, y1 = bbox
-            x2, y2, x3, y3 = self.cut_borders(bbox, percentage)
+            x0_bbox, y0_bbox, x1_bbox, y1_bbox = bbox
+            _, y2_bbox, _, y3_bbox = self.cut_borders(bbox, percentage)
             vertical_shift = int(self._get_screen_borders()[3] * vertical_shift_percentage / 100)
-            return [(x0, y0 + vertical_shift, x1, y2 + vertical_shift),
-                    (x0, y3 - vertical_shift, x1, y1 - vertical_shift)]
+            return [(x0_bbox, y0_bbox + vertical_shift, x1_bbox, y2_bbox + vertical_shift),
+                    (x0_bbox, y3_bbox - vertical_shift, x1_bbox, y1_bbox - vertical_shift)]
         return [bbox]
 
     @staticmethod
@@ -152,7 +167,7 @@ class ColorGenerator:
                 color_thief = ColorThiefCustom(screen)
                 col = color_thief.get_palette(color_count=palette_size)
             except Exception as err:
-                logging.info(f"Pallet extraction failed: {err}.")
+                logging.info("Pallet extraction failed: %s.", err)
                 col = [(50, 50, 150)]
             colors.extend([Color(*c) for c in col])
 
@@ -165,13 +180,13 @@ class ColorGenerator:
         :param colors: list of colors
         :return: Color object representing average color.
         """
-        r, g, b = 0, 0, 0
+        red, green, blue = 0, 0, 0
 
-        for cl in colors:
-            r_t, g_t, b_t = cl.tuple()
-            r += r_t
-            g += g_t
-            b += b_t
+        for color in colors:
+            r_t, g_t, b_t = color.tuple()
+            red += r_t
+            green += g_t
+            blue += b_t
 
-        avg_color = Color(int(r / len(colors)), int(g / len(colors)), int(b / len(colors)))
+        avg_color = Color(int(red / len(colors)), int(green / len(colors)), int(blue / len(colors)))
         return avg_color

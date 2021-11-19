@@ -1,3 +1,6 @@
+"""
+Entrypoint module for script execution
+"""
 import argparse
 import logging
 import sys
@@ -7,6 +10,10 @@ from .manager import BulbManager
 
 
 def set_logging():
+    """
+    Sets logging parameters
+    :return:
+    """
     root = logging.getLogger()
     root.setLevel(logging.INFO)
 
@@ -18,6 +25,10 @@ def set_logging():
 
 
 def main():
+    """
+    Entrypoint
+    :return:
+    """
     set_logging()
     parser = argparse.ArgumentParser()
 
@@ -25,21 +36,27 @@ def main():
     parser.add_argument("--strategy", "-s", type=int, default=Settings.BORDERS_STRATEGY)
     parser.add_argument("--bulb_ip_address", "-i", type=str, default=None)
     parser.add_argument("--timeout", "-t", type=int, default=5)
-    parser.add_argument("--delay", "-d", type=float, default=0.3)
+    parser.add_argument("--delay", "-d", type=float, default=0.2)
     parser.add_argument("--queue_size", "-q", type=int, default=30)
     parser.add_argument("--saturation_factor", "-f", type=float, default=7)
+    parser.add_argument("--screenshot_ttl", "-ttl", type=int, default=5)
 
     args = parser.parse_args()
 
-    use_last_bulb = not (args.choose or args.bulb_ip_address)  # don't use last bulb if IP or forced choice flagged
+    # don't use last bulb if IP or forced choice flagged
+    use_last_bulb = not (args.choose or args.bulb_ip_address)
+
     strategy = args.strategy
     bulb_ip_address = args.bulb_ip_address
     timeout = args.timeout
     delay = args.delay
     Settings.QUEUE_SIZE_CONST = args.queue_size
     Settings.SATURATION_FACTOR = args.saturation_factor
+    Settings.SCREENSHOT_TTL = args.screenshot_ttl
 
-    logging.info(f"QUEUE_SIZE_CONST: {Settings.QUEUE_SIZE_CONST} SATURATION_FACTOR: {Settings.SATURATION_FACTOR}")
+    logging.info("QUEUE_SIZE_CONST: %s SATURATION_FACTOR: %s",
+                 Settings.QUEUE_SIZE_CONST, Settings.SATURATION_FACTOR)
+    logging.info("Screenshot estimated delay: %s s.", delay * Settings.SCREENSHOT_TTL)
 
     manager = BulbManager(use_last_bulb, bulb_ip_address, timeout=timeout)
     manager.run_atmosphere(strategy, delay)

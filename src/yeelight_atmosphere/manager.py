@@ -22,7 +22,8 @@ class BulbManager:
     Class for managing bulbs.
     """
 
-    def __init__(self, use_last_bulb: bool, bulb_ip_address: str, effect: str = 'smooth', timeout: int = 5):
+    def __init__(self, use_last_bulb: bool, bulb_ip_address: str,
+                 effect: str = 'smooth', timeout: int = 5):
         self.use_last_bulb = use_last_bulb
         self.effect = effect
         self.bulb_ip_address = bulb_ip_address
@@ -62,12 +63,12 @@ class BulbManager:
                 self.send_to_db(last_bulb)
                 result = last_bulb
             else:
-                logging.info(f"Last bulb was not found.")
+                logging.info("Last bulb was not found.")
         elif self.bulb_ip_address:
             if self.is_bulb_alive(self.bulb_ip_address):
                 result = self.get_bulb_by_ip(self.bulb_ip_address)
             else:
-                logging.info(f"IP {self.bulb_ip_address} is not active.")
+                logging.info("IP %s is not active.", self.bulb_ip_address)
 
         if not result:
             result = self.choose_alive()
@@ -92,15 +93,15 @@ class BulbManager:
 
         return current_ip
 
-    def get_bulb_by_ip(self, ip) -> Bulb:
+    def get_bulb_by_ip(self, ip_address) -> Bulb:
         """
-        :param ip:
+        :param ip_address:
         :return: dict from discover_bulbs() representing a bulb
         """
         bulbs = self.get_alive_bulbs()
         res = None
         for bulb in bulbs:
-            if bulb.get('ip') == ip:
+            if bulb.get('ip') == ip_address:
                 res = bulb
                 break
 
@@ -126,15 +127,20 @@ class BulbManager:
     def get_alive_bulbs(self, reset=False) -> List[dict]:
         """
         :param reset: flag to reset cached list of bulbs
-        :return: result of discover_bulbs(), list of dicts: {'ip': '192.168.1.4', 'port': 55443, 'capabilities': {...}}
+        :return: result of discover_bulbs(), list of dicts:
+        {'ip': '192.168.1.4', 'port': 55443, 'capabilities': {...}}
         """
         if (not self.cached_bulbs) or reset:
             tmp_res = []
-            srt_adapters = sorted(ifaddr.get_adapters(),
-                                  key=lambda a: tuple(sorted([ip.ip for ip in a.ips if isinstance(ip.ip, str)])),
-                                  reverse=True) # Sorting of adapters by IP, to visit local 192.* first
+            srt_adapters = sorted(
+                ifaddr.get_adapters(), key=lambda a: tuple(sorted(
+                    [ip.ip for ip in a.ips if isinstance(ip.ip, str)]
+                )),
+                reverse=True)  # Sorting of adapters by IP, to visit local 192.* first
             for adapter in srt_adapters:
-                logging.info(f"Start discover bulbs with {self.timeout}s timeout at interface {adapter.nice_name}.")
+                logging.info("Start discover bulbs with %s s timeout "
+                             "at interface %s.",
+                             self.timeout, adapter.nice_name)
                 try:
                     tmp_res = discover_bulbs(self.timeout, adapter.name)
                 except OSError:
@@ -142,15 +148,15 @@ class BulbManager:
                 if tmp_res:
                     break
             self.cached_bulbs = tmp_res
-            logging.info(f"Found {len(self.cached_bulbs)} bulbs.")
+            logging.info("Found %s bulbs.", len(self.cached_bulbs))
         return self.cached_bulbs
 
-    def is_bulb_alive(self, ip) -> bool:
+    def is_bulb_alive(self, ip_address) -> bool:
         """
-        :param ip: ip address of bulb
+        :param ip_address: ip address of bulb
         :return: True if a bulb is pinging
         """
-        res = self._ping_bulb(ip)
+        res = self._ping_bulb(ip_address)
         return res
 
     @staticmethod
@@ -160,8 +166,8 @@ class BulbManager:
         with subprocess.Popen(command,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
-                              shell=True) as p:
-            output, errors = p.communicate()
+                              shell=True) as pipe:
+            _, errors = pipe.communicate()
         return not errors
 
     def choose_alive(self) -> (Bulb, None):
@@ -223,17 +229,18 @@ class BulbManager:
         """
         Interface of changing bulb color, with catching connection errors.
         :param color: Color object to set.
-        :param bulb: Bulb object to be changed, if None given operation applies to all chosen bulbs of BulbManager.
+        :param bulb_item: Bulb object to be changed,
+        if None given operation applies to all chosen bulbs of BulbManager.
         :return: None
         """
         bulbs = self.chosen_bulbs if not bulb else set(bulb)
-        for bulb in bulbs:
+        for bulb_item in bulbs:
             try:
-                bulb.change_color(color)
+                bulb_item.change_color(color)
             except BulbException:
                 logging.info("Connection lost. Retrying... ")
                 try:
-                    bulb.init_obj()
+                    bulb_item.init_obj()
                 except BulbConnectionLostException:
                     self.chosen_bulbs.clear()
                     logging.info("Connection was not established.")
