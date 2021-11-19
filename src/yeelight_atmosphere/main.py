@@ -27,6 +27,7 @@ def main():
     parser.add_argument("--timeout", "-t", type=int, default=5)
     parser.add_argument("--delay", "-d", type=float, default=0.3)
     parser.add_argument("--queue_size", "-q", type=int, default=30)
+    parser.add_argument("--saturation_factor", "-f", type=float, default=7)
 
     args = parser.parse_args()
 
@@ -36,6 +37,7 @@ def main():
     timeout = args.timeout
     delay = args.delay
     Settings.QUEUE_SIZE_CONST = args.queue_size
+    Settings.SATURATION_FACTOR = args.saturation_factor
 
     logging.info(f"QUEUE_SIZE_CONST: {Settings.QUEUE_SIZE_CONST} SATURATION_FACTOR: {Settings.SATURATION_FACTOR}")
 
