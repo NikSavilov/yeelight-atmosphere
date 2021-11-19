@@ -1,5 +1,6 @@
 import ctypes
 import logging
+import time
 from time import sleep
 from typing import List
 
@@ -130,7 +131,12 @@ class ColorGenerator:
         :param bbox: area to capture
         :return: Image of captured area
         """
-        img = ImageGrab.grab(bbox)
+        while True:
+            try:
+                img = ImageGrab.grab(bbox)
+                break
+            except OSError:
+                time.sleep(10)
         # img.show()
         return img
 
