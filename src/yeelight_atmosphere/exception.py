@@ -5,4 +5,4 @@ from yeelight import BulbException
 
 
 class BulbConnectionLostException(BulbException):
-    pass
+    """ Raises when connection is lost """

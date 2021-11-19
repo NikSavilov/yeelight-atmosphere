@@ -4,6 +4,9 @@ Module for singleton class Settings.
 
 
 class Settings:
+    """
+    Settings singleton
+    """
     # Strategies of selecting screen parts.
     CENTER_STRATEGY = 0
     BORDERS_STRATEGY = 1
@@ -22,6 +25,9 @@ class Settings:
     # To prevent toxic not balanced colors like (250, 0, 0)
     MAX_COLOR_VALUE = 180
     MIN_COLOR_VALUE = 30
+
+    # TTL of screenshot
+    SCREENSHOT_TTL = 30
 
     # Debugging section
 
