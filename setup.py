@@ -30,6 +30,7 @@ setup(
         'Pillow==8.4.0',
         'sqlalchemy==1.4.26',
         'colorthief==0.2.1',
-        'psutil==5.8.0'
+        'psutil==5.8.0',
+        'ifaddr==0.1.7',
     ]
 )

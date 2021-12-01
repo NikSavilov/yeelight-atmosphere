@@ -60,3 +60,4 @@ def main():
 
     manager = BulbManager(use_last_bulb, bulb_ip_address, timeout=timeout)
     manager.run_atmosphere(strategy, delay)
+    manager.gather_commands()

@@ -3,6 +3,7 @@ Module for bulbs of different type.
 """
 import logging
 import os
+import socket
 import time
 from collections import deque
 from pathlib import Path
@@ -23,7 +24,9 @@ from .generator import ColorGenerator
 
 HOME = str(Path.home())
 db_path = os.path.join(HOME, 'local.db')
-engine = create_engine('sqlite:///' + db_path)
+engine = create_engine('sqlite:///' + db_path,
+                       # To prevent sqlalchemy from raising threading error.
+                       connect_args={'check_same_thread': False})
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -77,7 +80,7 @@ class Bulb(Base):
                 self.bulb_obj_.start_music()
                 logging.info("Connected: %s", ip_address)
                 return self.bulb_obj_
-            except (BulbException, ConnectionResetError, TypeError):
+            except (BulbException, ConnectionResetError, TypeError, socket.timeout):
                 time.sleep(5)
 
         raise BulbConnectionLostException(f"No connection established with {ip_address}")
