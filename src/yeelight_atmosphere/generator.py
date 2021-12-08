@@ -3,6 +3,8 @@ Color generator module.
 """
 import ctypes
 import logging
+import pickle
+import random
 import time
 from time import sleep
 from typing import List
@@ -168,6 +170,10 @@ class ColorGenerator:
                 col = color_thief.get_palette(color_count=palette_size)
             except Exception as err:
                 logging.info("Pallet extraction failed: %s.", err)
+                # Saves screenshots with empty pixels for future debugging.
+                with open(f"bad_image_obj{random.randint(1000, 100000000)}.pickle", 'wb') as file_s:
+                    pickle.dump(screen, file_s)
+                screen.show()
                 col = [(50, 50, 150)]
             colors.extend([Color(*c) for c in col])
 

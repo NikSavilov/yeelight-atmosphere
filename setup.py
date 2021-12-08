@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md')) as f:
 
 setup(
     name='yeelight-atmosphere',
-    version='0.5.0',
+    version='0.6.0',
     description='Change your yeelight lamp color to scene atmosphere.',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -30,6 +30,7 @@ setup(
         'Pillow==8.4.0',
         'sqlalchemy==1.4.26',
         'colorthief==0.2.1',
-        'psutil==5.8.0'
+        'psutil==5.8.0',
+        'ifaddr==0.1.7',
     ]
 )
