@@ -21,6 +21,7 @@ To choose a part of screen to parse for a color use --strategy flag. Full screen
 - Top and bottom borders = 1
 - Full screen = 2
 
+
     python -m yeelight_atmosphere --strategy 0
 
 To modify delay of changing color use --dalay (seconds). The less the smoother.
